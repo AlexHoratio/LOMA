@@ -25,12 +25,17 @@ workflow READ_QC {
     SEQTK_FQCHK_PREQC(reads, params.SEQTK_FQCHK.endseq_len)
     ch_versions = ch_versions.mix(SEQTK_FQCHK_PREQC.out.versions)
 
-    // Trims adapters
-    PORECHOP_PORECHOP(reads)
-    ch_versions = ch_versions.mix(PORECHOP_PORECHOP.out.versions)
+    if (!params.skip_adapter_trimming) {
+        // Trims adapters
+        PORECHOP_PORECHOP(reads)
+        ch_versions = ch_versions.mix(PORECHOP_PORECHOP.out.versions)
+        ch_trimmed_reads = PORECHOP_PORECHOP.out.reads
+    } else {
+        ch_trimmed_reads = reads
+    }
 
     // Filters reads based on quality
-    FILTLONG(PORECHOP_PORECHOP.out.reads)
+    FILTLONG(ch_trimmed_reads)
     ch_versions = ch_versions.mix(FILTLONG.out.versions)
 
     emit:
